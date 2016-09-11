@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "S22.Scrypt", "S22.Scrypt\S22.Scrypt.csproj", "{9659ECFE-DF43-4F4E-AD43-3033B45C6DEF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "S22.Scrypt.Test", "S22.Scrypt.Test\S22.Scrypt.Test.csproj", "{49862637-839A-45B1-8565-95A2D68E68CD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9659ECFE-DF43-4F4E-AD43-3033B45C6DEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9659ECFE-DF43-4F4E-AD43-3033B45C6DEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9659ECFE-DF43-4F4E-AD43-3033B45C6DEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9659ECFE-DF43-4F4E-AD43-3033B45C6DEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49862637-839A-45B1-8565-95A2D68E68CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49862637-839A-45B1-8565-95A2D68E68CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49862637-839A-45B1-8565-95A2D68E68CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49862637-839A-45B1-8565-95A2D68E68CD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
