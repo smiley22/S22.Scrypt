@@ -69,6 +69,14 @@ namespace S22.Scrypt {
 			set;
 		}
 
+		public Rfc7914DerivedBytes(byte[] password, byte[] salt, int blockSize = 8,
+			int parallelization = 1, int cost = 16384) {
+		}
+
+		public Rfc7914DerivedBytes(string password, byte[] salt, int blockSize = 8,
+			int parallelization = 1, int cost = 16384) {
+		}
+
 		/// <summary>
 		/// Returns the pseudo-random key for this object.
 		/// </summary>
