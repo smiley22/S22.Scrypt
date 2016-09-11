@@ -33,7 +33,7 @@ namespace S22.Scrypt {
 			set {
 				if (value == null)
 					throw new ArgumentNullException("The Salt property cannot be null.");
-				salt = value;
+				salt = (byte[])value.Clone();
 			}
 		}
 
@@ -43,12 +43,17 @@ namespace S22.Scrypt {
 		/// <remarks>
 		/// At the current time (August 2016), a block size of 8 appears to yield good results.
 		/// </remarks>
+		/// <exception cref="ArgumentException">
+		/// The property is being set and the new value is less than or equal to 0.
+		/// </exception>
 		public int BlockSize {
 			get {
 				return blockSize;
 			}
 			set {
-				throw new NotImplementedException();
+				if (value < 1)
+					throw new ArgumentException($"Invalid value {value} for BlockSize.");
+				blockSize = value;
 			}
 		}
 
@@ -61,15 +66,16 @@ namespace S22.Scrypt {
 		/// </remarks>
 		/// <exception cref="ArgumentException">
 		/// The property is being set and the new value is less than or equal to 1, or the new
-		/// value is not a power of 2, or the new value is less then
-		/// 2^(128 * <see cref="BlockSize"/> / 8).
+		/// value is not a power of 2.
 		/// </exception>
 		public int Cost {
 			get {
 				return cost;
 			}
 			set {
-				throw new NotImplementedException();
+				if((value < 2) || ((value & (value - 1)) != 0))
+					throw new ArgumentException($"Invalid value {value} for Cost.");
+				cost = value;
 			}
 		}
 
@@ -81,26 +87,48 @@ namespace S22.Scrypt {
 		/// ((2^32-1) * 32) / (128 * <see cref="BlockSize"/>).
 		/// </remarks>
 		/// <exception cref="ArgumentException">
-		/// The property is being set and the new value is negative, or the new value is bigger
-		/// than ((2^32-1) * 32) / (128 * <see cref="BlockSize"/>).
+		/// The property is being set and the new value is negative.
 		/// </exception>
 		public int Parallelization {
 			get {
 				return parallelization;
 			}
 			set {
-				throw new NotImplementedException();
+				if (value < 0)
+					throw new ArgumentException($"Invalid value {value} for Parallelization.");
+				parallelization = value;
 			}
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the Rfc7914DerivedBytes class using a password, a salt size, and number of iterations to derive the key.
+		/// Initializes a new instance of the Rfc7914DerivedBytes class using a password, a salt,
+		/// and optionally a block size and values for the parallelization and cost
+		/// parameters of the scrypt function.
 		/// </summary>
-		/// <param name="password"></param>
-		/// <param name="salt"></param>
-		/// <param name="blockSize"></param>
-		/// <param name="parallelization"></param>
-		/// <param name="cost"></param>
+		/// <param name="password">
+		/// The password used to derive the key.
+		/// </param>
+		/// <param name="salt">
+		/// The key salt used to derive the key.
+		/// </param>
+		/// <param name="blockSize">
+		/// The block size for the operation.
+		/// </param>
+		/// <param name="parallelization">
+		/// The parallelization parameter for the operation.
+		/// </param>
+		/// <param name="cost">
+		/// The CPU/Memory cost parameter for the operation.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// The <paramref name="password"/> parameter or the <paramref name="salt"/> parameter is
+		/// null.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// The <paramref name="blockSize"/> parameter is less than one, or the
+		/// <paramref name="parallelization"/> is less than one, or the <paramref name="cost"/>
+		/// parameter is less than two or not a power of two.
+		/// </exception>
 		public Rfc7914DerivedBytes(byte[] password, byte[] salt, int blockSize = 8,
 			int parallelization = 1, int cost = 16384) {
 			if (password == null)
@@ -113,24 +141,99 @@ namespace S22.Scrypt {
 
 		/// <summary>
 		/// Initializes a new instance of the Rfc7914DerivedBytes class using a password, a salt
-		/// size, and optionally a block size and values to use for the parallelization and cost
+		/// size, and optionally a block size and values for the parallelization and cost
 		/// parameters of the scrypt function.
 		/// </summary>
-		/// <param name="password"></param>
-		/// <param name="saltSize"></param>
-		/// <param name="blockSize"></param>
-		/// <param name="parallelization"></param>
-		/// <param name="cost"></param>
+		/// <param name="password">
+		/// The password used to derive the key.
+		/// </param>
+		/// <param name="saltSize">
+		/// The size of the random salt that you want the class to generate.
+		/// </param>
+		/// <param name="blockSize">
+		/// The block size for the operation.
+		/// </param>
+		/// <param name="parallelization">
+		/// The parallelization parameter for the operation.
+		/// </param>
+		/// <param name="cost">
+		/// The CPU/Memory cost parameter for the operation.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// The <paramref name="password"/> parameter is null.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// The <paramref name="saltSize"/> parameter is less than 1, or the <paramref name="blockSize"/>
+		/// parameter is less than one, or the <paramref name="parallelization"/> is less than
+		/// one, or the <paramref name="cost"/> parameter is less than two or not a power of two.
+		/// </exception>
 		public Rfc7914DerivedBytes(byte[] password, int saltSize, int blockSize = 8,
 			int parallelization = 1, int cost = 16384)
 			: this(password, GetRandomBytes(saltSize), blockSize, parallelization, cost) {
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the Rfc7914DerivedBytes class using a password, a salt
+		/// size, and optionally a block size and values for the parallelization and cost
+		/// parameters of the scrypt function.
+		/// </summary>
+		/// <param name="password">
+		/// The password used to derive the key.
+		/// </param>
+		/// <param name="saltSize">
+		/// The size of the random salt that you want the class to generate.
+		/// </param>
+		/// <param name="blockSize">
+		/// The block size for the operation.
+		/// </param>
+		/// <param name="parallelization">
+		/// The parallelization parameter for the operation.
+		/// </param>
+		/// <param name="cost">
+		/// The CPU/Memory cost parameter for the operation.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// The <paramref name="password"/> parameter is null.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// The <paramref name="saltSize"/> parameter is less than 1, or the <paramref name="blockSize"/>
+		/// parameter is less than one, or the <paramref name="parallelization"/> is less than
+		/// one, or the <paramref name="cost"/> parameter is less than two or not a power of two.
+		/// </exception>
 		public Rfc7914DerivedBytes(string password, int saltSize, int blockSize = 8,
 			int parallelization = 1, int cost = 16384)
 			: this(Encoding.UTF8.GetBytes(password), saltSize, blockSize, parallelization, cost) {
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the Rfc7914DerivedBytes class using a password, a salt,
+		/// and optionally a block size and values for the parallelization and cost
+		/// parameters of the scrypt function.
+		/// </summary>
+		/// <param name="password">
+		/// The password used to derive the key.
+		/// </param>
+		/// <param name="salt">
+		/// The key salt used to derive the key.
+		/// </param>
+		/// <param name="blockSize">
+		/// The block size for the operation.
+		/// </param>
+		/// <param name="parallelization">
+		/// The parallelization parameter for the operation.
+		/// </param>
+		/// <param name="cost">
+		/// The CPU/Memory cost parameter for the operation.
+		/// </param>
+		/// <exception cref="ArgumentNullException">
+		/// The <paramref name="password"/> parameter or the <paramref name="salt"/> parameter is
+		/// null.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		/// The <paramref name="blockSize"/> parameter is less than one, or the
+		/// <paramref name="parallelization"/> is less than one, or the <paramref name="cost"/>
+		/// parameter is less than two or not a power of two.
+		/// </exception>
 		public Rfc7914DerivedBytes(string password, byte[] salt, int blockSize = 8,
 			int parallelization = 1, int cost = 16384)
 			: this(Encoding.UTF8.GetBytes(password), salt, blockSize, parallelization, cost) {
@@ -178,6 +281,20 @@ namespace S22.Scrypt {
 			throw new NotImplementedException();
 		}
 
+		/// <summary>
+		/// Gets an array of bytes with a cryptographically strong sequence of random values of
+		/// the specified size.
+		/// </summary>
+		/// <param name="size">
+		/// The size of the array, in bytes.
+		/// </param>
+		/// <returns>
+		/// An array of bytes with a cryptographically strong sequence of random values of the
+		/// specified size.
+		/// </returns>
+		/// <exception cref="ArgumentException">
+		/// The size parameter is less than or equal to 0.
+		/// </exception>
 		static byte[] GetRandomBytes(int size) {
 			if (size <= 0)
 				throw new ArgumentException(nameof(size));

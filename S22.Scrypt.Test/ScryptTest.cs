@@ -119,9 +119,9 @@ namespace S22.Scrypt.Test {
 			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, 0),
 				"A block size less than or equal to 0 was inappropriately allowed.");
 			var r = 8;
-			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, r, 0),
-				"A parallelization less than or equal to 0 was inappropriately allowed.");
-			var p = 1;
+			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, r, -1),
+				"A parallelization less than 0 was inappropriately allowed.");
+			var p = 0;
 			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, r, p, 0),
 				"A cost less than or equal to 0 was inappropriately allowed.");
 		}
@@ -157,25 +157,64 @@ namespace S22.Scrypt.Test {
 			}
 		}
 
+		/// <summary>
+		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DerivedBytes.BlockSize"/>
+		/// property throws an <see cref="ArgumentException"/>.
+		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
 		public void InvalidValueForBlockSize() {
-			// TODO
-			throw new NotImplementedException();
+			var P = Encoding.ASCII.GetBytes(string.Empty);
+			var S = Encoding.ASCII.GetBytes(string.Empty);
+			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+				AssertThrows<ArgumentException>(() => {
+					scrypt.BlockSize = 0;
+				}, "A block size value of 0 was inappropriately allowed.");
+				AssertThrows<ArgumentException>(() => {
+					scrypt.BlockSize = -1;
+				}, "A negative block size value was inappropriately allowed.");
+			}
 		}
 
+		/// <summary>
+		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DerivedBytes.Cost"/>
+		/// property throws an <see cref="ArgumentException"/>.
+		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
 		public void InvalidValueForCost() {
-			// TODO
-			throw new NotImplementedException();
+			var P = Encoding.ASCII.GetBytes(string.Empty);
+			var S = Encoding.ASCII.GetBytes(string.Empty);
+			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+				AssertThrows<ArgumentException>(() => {
+					scrypt.Cost = 0;
+				}, "A cost value of 0 was inappropriately allowed.");
+				AssertThrows<ArgumentException>(() => {
+					scrypt.Cost = 1;
+				}, "A cost value of 1 was inappropriately allowed.");
+				AssertThrows<ArgumentException>(() => {
+					scrypt.Cost = -1;
+				}, "A negative cost value was inappropriately allowed.");
+				AssertThrows<ArgumentException>(() => {
+					scrypt.Cost = 12345;
+				}, "A cost value that is not a power of two was inappropriately allowed.");
+			}
 		}
 
+		/// <summary>
+		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DerivedBytes.Parallelization"/>
+		/// property throws an <see cref="ArgumentException"/>.
+		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
 		public void InvalidValueForParallelization() {
-			// TODO
-			throw new NotImplementedException();
+			var P = Encoding.ASCII.GetBytes(string.Empty);
+			var S = Encoding.ASCII.GetBytes(string.Empty);
+			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+				AssertThrows<ArgumentException>(() => {
+					scrypt.Parallelization = -1;
+				}, "A negative parallelization value was inappropriately allowed.");
+			}
 		}
 
 		/// <summary>
