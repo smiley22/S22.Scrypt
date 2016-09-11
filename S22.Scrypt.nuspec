@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>S22.Scrypt</id>
+        <version>1.0.0</version>
+        <title>S22.Scrypt</title>
+        <authors>Torben Könke</authors>
+        <owners>Torben Könke</owners>
+        <projectUrl>https://github.com/smiley22/S22.Scrypt</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Implements the password-based key derivation function scrypt specified in RFC 7914.</description>
+        <copyright>Copyright © Torben Könke 2016</copyright>
+        <tags>scrypt rfc7914</tags>
+    </metadata>
+    <files />
+</package>

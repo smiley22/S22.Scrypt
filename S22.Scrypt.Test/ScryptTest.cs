@@ -17,7 +17,7 @@ namespace S22.Scrypt.Test {
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
-		public void TestVector0() {
+		public void Rfc7914TestVector0() {
 			var P = Encoding.ASCII.GetBytes(string.Empty);
 			var S = Encoding.ASCII.GetBytes(string.Empty);
 			int N = 16,
@@ -40,7 +40,7 @@ namespace S22.Scrypt.Test {
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
-		public void TestVector1() {
+		public void Rfc7914TestVector1() {
 			var P = Encoding.ASCII.GetBytes("password");
 			var S = Encoding.ASCII.GetBytes("NaCl");
 			int N = 1024,
@@ -63,7 +63,7 @@ namespace S22.Scrypt.Test {
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
-		public void TestVector2() {
+		public void Rfc7914TestVector2() {
 			var P = Encoding.ASCII.GetBytes("pleaseletmein");
 			var S = Encoding.ASCII.GetBytes("SodiumChloride");
 			int N = 16384,
@@ -86,7 +86,7 @@ namespace S22.Scrypt.Test {
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
-		public void TestVector3() {
+		public void Rfc7914TestVector3() {
 			var P = Encoding.ASCII.GetBytes("pleaseletmein");
 			var S = Encoding.ASCII.GetBytes("SodiumChloride");
 			int N = 1048576,
@@ -104,13 +104,32 @@ namespace S22.Scrypt.Test {
 			}
 		}
 
+		/// <summary>
+		/// Ensures passing invalid arguments to the constructor throws the appropriate
+		/// argument exceptions.
+		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
-		public void InvalidCtorShouldRaise() {
+		public void InvalidArgumentsForCtor() {
 			AssertThrows<ArgumentNullException>(() => new Rfc7914DerivedBytes((byte[])null, null),
 				"A password of null was inappropriately allowed.");
+			AssertThrows<ArgumentNullException>(() => new Rfc7914DerivedBytes("", null),
+				"A salt of null was inappropriately allowed.");
+			var S = Encoding.ASCII.GetBytes(string.Empty);
+			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, 0),
+				"A block size less than or equal to 0 was inappropriately allowed.");
+			var r = 8;
+			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, r, 0),
+				"A parallelization less than or equal to 0 was inappropriately allowed.");
+			var p = 1;
+			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, r, p, 0),
+				"A cost less than or equal to 0 was inappropriately allowed.");
 		}
 
+		/// <summary>
+		/// Ensures passing an invalid argument to the GetBytes method throws an
+		/// <see cref="ArgumentOutOfRangeException"/>.
+		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
 		public void InvalidArgumentForGetBytes() {
@@ -122,6 +141,56 @@ namespace S22.Scrypt.Test {
 			}
 		}
 
+		/// <summary>
+		/// Ensures assigning null to the <see cref="Rfc7914DerivedBytes.Salt"/> property
+		/// throws an <see cref="ArgumentNullException"/>.
+		/// </summary>
+		[TestMethod]
+		[TestCategory("Scrypt")]
+		public void InvalidValueForSalt() {
+			var P = Encoding.ASCII.GetBytes(string.Empty);
+			var S = Encoding.ASCII.GetBytes(string.Empty);
+			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+				AssertThrows<ArgumentNullException>(() => {
+					scrypt.Salt = null;
+				}, "A salt value of null was inappropriately allowed.");
+			}
+		}
+
+		[TestMethod]
+		[TestCategory("Scrypt")]
+		public void InvalidValueForBlockSize() {
+			// TODO
+			throw new NotImplementedException();
+		}
+
+		[TestMethod]
+		[TestCategory("Scrypt")]
+		public void InvalidValueForCost() {
+			// TODO
+			throw new NotImplementedException();
+		}
+
+		[TestMethod]
+		[TestCategory("Scrypt")]
+		public void InvalidValueForParallelization() {
+			// TODO
+			throw new NotImplementedException();
+		}
+
+		/// <summary>
+		/// Verifies that the specified exception is thrown by the specified method.
+		/// </summary>
+		/// <typeparam name="T">
+		/// The type of the expected exception.
+		/// </typeparam>
+		/// <param name="action">
+		/// Encapsulates the method that is expected to throw the specified exception.
+		/// </param>
+		/// <param name="message">
+		/// A message to display if the assertion fails. This message can be seen in the
+		/// unit test results.
+		/// </param>
 		static void AssertThrows<T>(Action action, string message = null) where T:Exception {
 			try {
 				action();

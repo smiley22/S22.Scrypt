@@ -1,5 +1,3 @@
-# Ignore nuspec files from NuGet
-*.nuspec
 Tools/
 
 #################

@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace S22.Scrypt {
 	/// <summary>
 	/// Implements the password-based key derivation function scrypt.
 	/// </summary>
 	public class Rfc7914DerivedBytes : DeriveBytes {
+		byte[] salt;
+		int blockSize;
+		int cost;
+		int parallelization;
+
 		/// <summary>
 		/// Gets or sets the key salt value for the operation.
 		/// </summary>
@@ -21,8 +27,14 @@ namespace S22.Scrypt {
 		/// derivation.
 		/// </remarks>
 		public byte[] Salt {
-			get;
-			set;
+			get {
+				return salt;
+			}
+			set {
+				if (value == null)
+					throw new ArgumentNullException("The Salt property cannot be null.");
+				salt = value;
+			}
 		}
 
 		/// <summary>
@@ -32,8 +44,12 @@ namespace S22.Scrypt {
 		/// At the current time (August 2016), a block size of 8 appears to yield good results.
 		/// </remarks>
 		public int BlockSize {
-			get;
-			set;
+			get {
+				return blockSize;
+			}
+			set {
+				throw new NotImplementedException();
+			}
 		}
 
 		/// <summary>
@@ -49,8 +65,12 @@ namespace S22.Scrypt {
 		/// 2^(128 * <see cref="BlockSize"/> / 8).
 		/// </exception>
 		public int Cost {
-			get;
-			set;
+			get {
+				return cost;
+			}
+			set {
+				throw new NotImplementedException();
+			}
 		}
 
 		/// <summary>
@@ -65,16 +85,55 @@ namespace S22.Scrypt {
 		/// than ((2^32-1) * 32) / (128 * <see cref="BlockSize"/>).
 		/// </exception>
 		public int Parallelization {
-			get;
-			set;
+			get {
+				return parallelization;
+			}
+			set {
+				throw new NotImplementedException();
+			}
 		}
 
+		/// <summary>
+		/// Initializes a new instance of the Rfc7914DerivedBytes class using a password, a salt size, and number of iterations to derive the key.
+		/// </summary>
+		/// <param name="password"></param>
+		/// <param name="salt"></param>
+		/// <param name="blockSize"></param>
+		/// <param name="parallelization"></param>
+		/// <param name="cost"></param>
 		public Rfc7914DerivedBytes(byte[] password, byte[] salt, int blockSize = 8,
 			int parallelization = 1, int cost = 16384) {
+			if (password == null)
+				throw new ArgumentNullException(nameof(password));
+			Salt = salt;
+			BlockSize = blockSize;
+			Parallelization = parallelization;
+			Cost = cost;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the Rfc7914DerivedBytes class using a password, a salt
+		/// size, and optionally a block size and values to use for the parallelization and cost
+		/// parameters of the scrypt function.
+		/// </summary>
+		/// <param name="password"></param>
+		/// <param name="saltSize"></param>
+		/// <param name="blockSize"></param>
+		/// <param name="parallelization"></param>
+		/// <param name="cost"></param>
+		public Rfc7914DerivedBytes(byte[] password, int saltSize, int blockSize = 8,
+			int parallelization = 1, int cost = 16384)
+			: this(password, GetRandomBytes(saltSize), blockSize, parallelization, cost) {
+		}
+
+		public Rfc7914DerivedBytes(string password, int saltSize, int blockSize = 8,
+			int parallelization = 1, int cost = 16384)
+			: this(Encoding.UTF8.GetBytes(password), saltSize, blockSize, parallelization, cost) {
 		}
 
 		public Rfc7914DerivedBytes(string password, byte[] salt, int blockSize = 8,
-			int parallelization = 1, int cost = 16384) {
+			int parallelization = 1, int cost = 16384)
+			: this(Encoding.UTF8.GetBytes(password), salt, blockSize, parallelization, cost) {
 		}
 
 		/// <summary>
@@ -117,6 +176,15 @@ namespace S22.Scrypt {
 
 		byte[] ScryptROMix(byte[] input) {
 			throw new NotImplementedException();
+		}
+
+		static byte[] GetRandomBytes(int size) {
+			if (size <= 0)
+				throw new ArgumentException(nameof(size));
+			var bytes = new byte[size];
+			using (var csp = new RNGCryptoServiceProvider())
+				csp.GetBytes(bytes);
+			return bytes;
 		}
 	}
 }
