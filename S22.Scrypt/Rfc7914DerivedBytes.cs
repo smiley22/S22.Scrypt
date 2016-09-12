@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -73,7 +74,7 @@ namespace S22.Scrypt {
 				return cost;
 			}
 			set {
-				if((value < 2) || ((value & (value - 1)) != 0))
+				if ((value < 2) || ((value & (value - 1)) != 0))
 					throw new ArgumentException($"Invalid value {value} for Cost.");
 				cost = value;
 			}
@@ -269,15 +270,56 @@ namespace S22.Scrypt {
 			throw new NotImplementedException();
 		}
 
-		byte[] Salsa(byte[] input) {
+		/// <summary>
+		/// Salsa20/8 Core is a round-reduced variant of the Salsa20 Core. It is a hash function
+		/// from 64-octet strings to 64-octet strings.
+		/// </summary>
+		/// <param name="input">
+		/// A 64-byte sized array of input data.
+		/// </param>
+		/// <returns>
+		/// A 64-byte sized array of the transformed output data.
+		/// </returns>
+		/// <remarks>
+		///  Note that Salsa20/8 Core is not a cryptographic hash function since it is not
+		///  collision resistant.
+		/// </remarks>
+		internal static uint[] Salsa(uint[] input) {
+			int i;
+			var x = new uint[16];
+			var output = new uint[16];
+			for (i = 0; i < 16; ++i)
+				x[i] = input[i];
+			for (i = 8; i > 0; i -= 2) {
+				x[4] ^= R(x[0] + x[12], 7); x[8] ^= R(x[4] + x[0], 9);
+				x[12] ^= R(x[8] + x[4], 13); x[0] ^= R(x[12] + x[8], 18);
+				x[9] ^= R(x[5] + x[1], 7); x[13] ^= R(x[9] + x[5], 9);
+				x[1] ^= R(x[13] + x[9], 13); x[5] ^= R(x[1] + x[13], 18);
+				x[14] ^= R(x[10] + x[6], 7); x[2] ^= R(x[14] + x[10], 9);
+				x[6] ^= R(x[2] + x[14], 13); x[10] ^= R(x[6] + x[2], 18);
+				x[3] ^= R(x[15] + x[11], 7); x[7] ^= R(x[3] + x[15], 9);
+				x[11] ^= R(x[7] + x[3], 13); x[15] ^= R(x[11] + x[7], 18);
+				x[1] ^= R(x[0] + x[3], 7); x[2] ^= R(x[1] + x[0], 9);
+				x[3] ^= R(x[2] + x[1], 13); x[0] ^= R(x[3] + x[2], 18);
+				x[6] ^= R(x[5] + x[4], 7); x[7] ^= R(x[6] + x[5], 9);
+				x[4] ^= R(x[7] + x[6], 13); x[5] ^= R(x[4] + x[7], 18);
+				x[11] ^= R(x[10] + x[9], 7); x[8] ^= R(x[11] + x[10], 9);
+				x[9] ^= R(x[8] + x[11], 13); x[10] ^= R(x[9] + x[8], 18);
+				x[12] ^= R(x[15] + x[14], 7); x[13] ^= R(x[12] + x[15], 9);
+				x[14] ^= R(x[13] + x[12], 13); x[15] ^= R(x[14] + x[13], 18);
+			}
+			for (i = 0; i < 16; ++i)
+				output[i] = x[i] + input[i];
+			return output;
+		}
+
+		internal byte[] ScryptBlockMix(byte[] input) {
 			throw new NotImplementedException();
 		}
 
-		byte[] ScryptBlockMix(byte[] input) {
-			throw new NotImplementedException();
-		}
-
-		byte[] ScryptROMix(byte[] input) {
+		internal byte[] ScryptROMix(byte[] input) {
+			// r = BlockSize
+			// N = Parallelization
 			throw new NotImplementedException();
 		}
 
@@ -302,6 +344,13 @@ namespace S22.Scrypt {
 			using (var csp = new RNGCryptoServiceProvider())
 				csp.GetBytes(bytes);
 			return bytes;
+		}
+
+		/// <summary>
+		/// Should be inlined hopefully.
+		/// </summary>
+		static uint R(uint a, int b) {
+			return (a << b) | (a >> (32 - b));
 		}
 	}
 }

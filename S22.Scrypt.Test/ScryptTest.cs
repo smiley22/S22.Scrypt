@@ -2,6 +2,7 @@
 using System.Text;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 namespace S22.Scrypt.Test {
 	/// <summary>
@@ -13,7 +14,7 @@ namespace S22.Scrypt.Test {
 	[TestClass]
 	public class ScryptTest {
 		/// <summary>
-		/// First test vector for the scrypt function. Cp. RFC 7914, page 12.
+		/// First test vector for the scrypt function. Cf. RFC 7914, page 12.
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
@@ -30,13 +31,13 @@ namespace S22.Scrypt.Test {
 				0xfc, 0xd0, 0x06, 0x9d, 0xed, 0x09, 0x48, 0xf8, 0x32, 0x6a, 0x75, 0x3a, 0x0f, 0xc8, 0x1f, 0x17,
 				0xe8, 0xd3, 0xe0, 0xfb, 0x2e, 0x0d, 0x36, 0x28, 0xcf, 0x35, 0xe2, 0x0c, 0x38, 0xd1, 0x89, 0x06
 			};
-			using(var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
+			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
 				Assert.IsTrue(scrypt.GetBytes(dkLen).SequenceEqual(expected));
 			}
 		}
 
 		/// <summary>
-		/// Second test vector for the scrypt function. Cp. RFC 7914, page 12.
+		/// Second test vector for the scrypt function. Cf. RFC 7914, page 12.
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
@@ -59,7 +60,7 @@ namespace S22.Scrypt.Test {
 		}
 
 		/// <summary>
-		/// Third test vector for the scrypt function. Cp. RFC 7914, page 12.
+		/// Third test vector for the scrypt function. Cf. RFC 7914, page 12.
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
@@ -82,7 +83,7 @@ namespace S22.Scrypt.Test {
 		}
 
 		/// <summary>
-		/// Fourth test vector for the scrypt function. Cp. RFC 7914, page 12.
+		/// Fourth test vector for the scrypt function. Cf. RFC 7914, page 12.
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
@@ -102,6 +103,56 @@ namespace S22.Scrypt.Test {
 			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
 				Assert.IsTrue(scrypt.GetBytes(dkLen).SequenceEqual(expected));
 			}
+		}
+
+		/// <summary>
+		/// Test vector for the Salsa20/8 Core function. Cf. RFC 7914, page 8.
+		/// </summary>
+		[TestMethod]
+		[TestCategory("Scrypt")]
+		public void Salsa80TestVector() {
+			var input = new byte[] {
+				0x7e, 0x87, 0x9a, 0x21, 0x4f, 0x3e, 0xc9, 0x86, 0x7c, 0xa9, 0x40, 0xe6, 0x41, 0x71, 0x8f, 0x26,
+				0xba, 0xee, 0x55, 0x5b, 0x8c, 0x61, 0xc1, 0xb5, 0x0d, 0xf8, 0x46, 0x11, 0x6d, 0xcd, 0x3b, 0x1d,
+				0xee, 0x24, 0xf3, 0x19, 0xdf, 0x9b, 0x3d, 0x85, 0x14, 0x12, 0x1e, 0x4b, 0x5a, 0xc5, 0xaa, 0x32,
+				0x76, 0x02, 0x1d, 0x29, 0x09, 0xc7, 0x48, 0x29, 0xed, 0xeb, 0xc6, 0x8d, 0xb8, 0xb8, 0xc2, 0x5e
+			};
+			var expected = new byte[] {
+				0xa4, 0x1f, 0x85, 0x9c, 0x66, 0x08, 0xcc, 0x99, 0x3b, 0x81, 0xca, 0xcb, 0x02, 0x0c, 0xef, 0x05,
+				0x04, 0x4b, 0x21, 0x81, 0xa2, 0xfd, 0x33, 0x7d, 0xfd, 0x7b, 0x1c, 0x63, 0x96, 0x68, 0x2f, 0x29,
+				0xb4, 0x39, 0x31, 0x68, 0xe3, 0xc9, 0xe6, 0xbc, 0xfe, 0x6b, 0xc5, 0xb7, 0xa0, 0x6d, 0x96, 0xba,
+				0xe4, 0x24, 0xcc, 0x10, 0x2c, 0x91, 0x74, 0x5c, 0x24, 0xad, 0x67, 0x3d, 0xc7, 0x61, 0x8f, 0x81
+			};
+			var uint_in = new uint[input.Length / 4];
+			for (var i = 0; i < uint_in.Length; i++)
+				uint_in[i] = BitConverter.ToUInt32(input, i * 4);
+			var P = Encoding.ASCII.GetBytes(string.Empty);
+			var S = Encoding.ASCII.GetBytes(string.Empty);
+			var uint_out = Rfc7914DerivedBytes.Salsa(uint_in);
+			var byte_out = new List<byte>();
+			for (var i = 0; i < uint_out.Length; i++)
+				byte_out.AddRange(BitConverter.GetBytes(uint_out[i]));
+			Assert.IsTrue(byte_out.SequenceEqual(expected));
+		}
+
+		/// <summary>
+		/// Test vector for the scryptBlockMix function. Cf. RFC 7914, page 9.
+		/// </summary>
+		[TestMethod]
+		[TestCategory("Scrypt")]
+		public void ScryptBlockMixTestVector() {
+			// TODO
+			Assert.Fail();
+		}
+
+		/// <summary>
+		/// Test vector for the scryptROMix function. Cf. RFC 7914, page 10.
+		/// </summary>
+		[TestMethod]
+		[TestCategory("Scrypt")]
+		public void ScryptROMixTestVector() {
+			// TODO
+			Assert.Fail();
 		}
 
 		/// <summary>
@@ -230,11 +281,11 @@ namespace S22.Scrypt.Test {
 		/// A message to display if the assertion fails. This message can be seen in the
 		/// unit test results.
 		/// </param>
-		static void AssertThrows<T>(Action action, string message = null) where T:Exception {
+		static void AssertThrows<T>(Action action, string message = null) where T : Exception {
 			try {
 				action();
 				Assert.Fail(message);
-			} catch(T) {
+			} catch (T) {
 			}
 		}
 	}
