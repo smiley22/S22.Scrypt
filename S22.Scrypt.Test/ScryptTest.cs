@@ -133,10 +133,13 @@ namespace S22.Scrypt.Test {
 			var P = Encoding.ASCII.GetBytes(string.Empty);
 			var S = Encoding.ASCII.GetBytes(string.Empty);
 #if UNSAFE
-			var @out = Rfc7914DerivedBytes.Salsa(uint_in);
-			byte* p = (byte*)@out;
-			for(var i = 0; i < expected.Length; i++)
-				Assert.IsTrue(expected[i] == p[i]);
+			var uint_expected = new uint[expected.Length / 4];
+			for (var i = 0; i < uint_expected.Length; i++)
+				uint_expected[i] = BitConverter.ToUInt32(expected, i * 4);
+			var output = new uint[uint_in.Length];
+			fixed(uint *p = output)
+				Rfc7914DerivedBytes.Salsa(uint_in, p);
+			Assert.IsTrue(output.SequenceEqual(uint_expected));
 #else
 			var uint_out = Rfc7914DerivedBytes.Salsa(uint_in);
 			var byte_out = new List<byte>();
@@ -174,8 +177,14 @@ namespace S22.Scrypt.Test {
 				0x7d, 0x3b, 0x3d, 0x80, 0x3b, 0x60, 0xe4, 0xab, 0x92, 0x09, 0x96, 0xe5, 0x9b, 0x4d, 0x53, 0xb6,
 				0x5d, 0x2a, 0x22, 0x58, 0x77, 0xd5, 0xed, 0xf5, 0x84, 0x2c, 0xb9, 0xf1, 0x4e, 0xef, 0xe4, 0x25
 			};
-			var output = Rfc7914DerivedBytes.ScryptBlockMix(input);
-			Assert.IsTrue(output.SequenceEqual(expected));
+			var uint_input = new uint[input.Length / 4];
+			for (var i = 0; i < uint_input.Length; i++)
+				uint_input[i] = BitConverter.ToUInt32(input, i * 4);
+			var uint_expected = new uint[expected.Length / 4];
+			for (var i = 0; i < uint_expected.Length; i++)
+				uint_expected[i] = BitConverter.ToUInt32(expected, i * 4);
+			var output = Rfc7914DerivedBytes.ScryptBlockMix(uint_input);
+			Assert.IsTrue(output.SequenceEqual(uint_expected));
 		}
 
 		/// <summary>
@@ -204,15 +213,20 @@ namespace S22.Scrypt.Test {
 				0xae, 0x12, 0xfd, 0x44, 0x38, 0xf2, 0x03, 0xa0, 0xe4, 0xe1, 0xc4, 0x7e, 0xc3, 0x14, 0x86, 0x1f,
 				0x4e, 0x90, 0x87, 0xcb, 0x33, 0x39, 0x6a, 0x68, 0x73, 0xe8, 0xf9, 0xd2, 0x53, 0x9a, 0x4b, 0x8e
 			};
+			var uint_input = new uint[input.Length / 4];
+			for (var i = 0; i < uint_input.Length; i++)
+				uint_input[i] = BitConverter.ToUInt32(input, i * 4);
+			var uint_expected = new uint[expected.Length / 4];
+			for (var i = 0; i < uint_expected.Length; i++)
+				uint_expected[i] = BitConverter.ToUInt32(expected, i * 4);
 			var P = Encoding.ASCII.GetBytes(string.Empty);
 			var S = Encoding.ASCII.GetBytes(string.Empty);
 			int N = 16,
 				r = 1,
 				p = 1;
 			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
-				Assert.IsTrue(scrypt.ScryptROMix(input).SequenceEqual(expected));
+				Assert.IsTrue(scrypt.ScryptROMix(uint_input).SequenceEqual(uint_expected));
 			}
-			Assert.Fail();
 		}
 
 		/// <summary>

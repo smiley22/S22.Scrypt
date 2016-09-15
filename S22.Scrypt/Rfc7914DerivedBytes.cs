@@ -281,6 +281,9 @@ namespace S22.Scrypt {
 		/// <param name="input">
 		/// A 64-byte sized array of input data.
 		/// </param>
+		/// <param name="output">
+		/// A pointer to the array to store the transformed data into.
+		/// </param>
 		/// <returns>
 		/// A pointer to the transformed output data.
 		/// </returns>
@@ -288,13 +291,11 @@ namespace S22.Scrypt {
 		///  Note that Salsa20/8 Core is not a cryptographic hash function since it is not
 		///  collision resistant.
 		/// </remarks>
-		internal unsafe static uint* Salsa(uint[] input) {
-			int i;
+		internal static unsafe uint* Salsa(uint[] input, uint* output) {
 			var x = new uint[16];
-			var output = new uint[16];
-			for (i = 0; i < 16; ++i)
+			for (var i = 0; i < 16; ++i)
 				x[i] = input[i];
-			for (i = 8; i > 0; i -= 2) {
+			for (var i = 8; i > 0; i -= 2) {
 				x[4] ^= R(x[0] + x[12], 7); x[8] ^= R(x[4] + x[0], 9);
 				x[12] ^= R(x[8] + x[4], 13); x[0] ^= R(x[12] + x[8], 18);
 				x[9] ^= R(x[5] + x[1], 7); x[13] ^= R(x[9] + x[5], 9);
@@ -312,11 +313,9 @@ namespace S22.Scrypt {
 				x[12] ^= R(x[15] + x[14], 7); x[13] ^= R(x[12] + x[15], 9);
 				x[14] ^= R(x[13] + x[12], 13); x[15] ^= R(x[14] + x[13], 18);
 			}
-			for (i = 0; i < 16; ++i)
+			for (var i = 0; i < 16; ++i)
 				output[i] = x[i] + input[i];
-			fixed(uint *p = output) {
-				return p;
-			}
+			return output;
 		}
 
 		/// <summary>
@@ -328,24 +327,51 @@ namespace S22.Scrypt {
 		/// <returns>
 		/// The transformed output data of size 128 * <see cref="BlockSize"/> bytes.
 		/// </returns>
-		internal static unsafe byte[] ScryptBlockMix(byte[] input) {
-			var y = new byte[input.Length];
-			var t = new uint[16];
-			fixed (byte* bp = input, by = y)
+		internal static unsafe uint[] ScryptBlockMix(uint[] input) {
+			uint[] y = new uint[input.Length],
+				   t = new uint[16],
+				   z = new uint[16];
+			fixed (uint* p = input, py = y, pz = z)
 			{
-				var p = (uint*)bp;
-				var x = (uint*)&bp[input.Length - 64];
-				var numBlocks = input.Length / 64;
-				var py = (uint*)by;
-				for (var i = 0; i < numBlocks; i++) {
+				var x = &p[input.Length - 16];
+				for (var i = 0; i < input.Length / 16; i++) {
 					for (var c = 0; c < 16; c++)
 						t[c] = x[c] ^ p[i * 16 + c];
-					x = Salsa(t);
+					x = Salsa(t, pz);
 					for (var c = 0; c < 16; c++)
 						py[i * 16 + c] = x[c];
 				}
 			}
 			return y;
+		}
+
+		/// <summary>
+		/// Performs the RomMix algorithm.
+		/// </summary>
+		/// <param name="input">
+		/// The input data of size 128 * <see cref="BlockSize"/> bytes.
+		/// </param>
+		/// <returns>
+		/// The transformed output data of size 128 * <see cref="BlockSize"/> bytes.
+		/// </returns>
+		internal unsafe uint[] ScryptROMix(uint[] input) {
+			var len = input.Length;
+			var v = new uint[len * Cost];
+			fixed (uint* pv = v)
+			{
+				for (var i = 0; i < Cost; i++) {
+					for (var c = 0; c < len; c++)
+						pv[i * len + c] = input[c];
+					input = ScryptBlockMix(input);
+
+				}
+				for (var i = 0; i < Cost; i++) {
+					var j = input[input.Length - 16] % Cost;
+					var t = Xor(input, &pv[j * len]);
+					input = ScryptBlockMix(t);
+				}
+			}
+			return input;
 		}
 #else
 		/// <summary>
@@ -392,25 +418,6 @@ namespace S22.Scrypt {
 		}
 
 		/// <summary>
-		/// XORs the specified input arrays with each other and returns the result.
-		/// </summary>
-		/// <param name="a">
-		/// The first array.
-		/// </param>
-		/// <param name="b">
-		/// The second array.
-		/// </param>
-		/// <returns>
-		/// A new array made up of the elements of a XORed with the elements of b.
-		/// </returns>
-		static uint[] Xor(uint[] a, uint[] b) {
-			var c = new uint[a.Length];
-			for (var i = 0; i < a.Length; i++)
-				c[i] = a[i] ^ b[i];
-			return c;
-		}
-
-		/// <summary>
 		/// Performs the BlockMix algorithm.
 		/// </summary>
 		/// <param name="input">
@@ -447,10 +454,23 @@ namespace S22.Scrypt {
 		}
 #endif
 
-		internal byte[] ScryptROMix(byte[] input) {
-			// r = BlockSize
-			// N = Parallelization
-			throw new NotImplementedException();
+		/// <summary>
+		/// XORs the specified input arrays with each other and returns the result.
+		/// </summary>
+		/// <param name="a">
+		/// The first array.
+		/// </param>
+		/// <param name="b">
+		/// The second array.
+		/// </param>
+		/// <returns>
+		/// A new array made up of the elements of a XORed with the elements of b.
+		/// </returns>
+		static unsafe uint[] Xor(uint[] a, uint* b) {
+			var c = new uint[a.Length];
+			for (var i = 0; i < a.Length; i++)
+				c[i] = a[i] ^ b[i];
+			return c;
 		}
 
 		/// <summary>
