@@ -34,7 +34,7 @@ namespace S22.Scrypt.Test {
 				0xfc, 0xd0, 0x06, 0x9d, 0xed, 0x09, 0x48, 0xf8, 0x32, 0x6a, 0x75, 0x3a, 0x0f, 0xc8, 0x1f, 0x17,
 				0xe8, 0xd3, 0xe0, 0xfb, 0x2e, 0x0d, 0x36, 0x28, 0xcf, 0x35, 0xe2, 0x0c, 0x38, 0xd1, 0x89, 0x06
 			};
-			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S, r, p, N)) {
 				Assert.IsTrue(scrypt.GetBytes(dkLen).SequenceEqual(expected));
 			}
 		}
@@ -57,7 +57,7 @@ namespace S22.Scrypt.Test {
 				0x2e, 0xaf, 0x30, 0xd9, 0x2e, 0x22, 0xa3, 0x88, 0x6f, 0xf1, 0x09, 0x27, 0x9d, 0x98, 0x30, 0xda,
 				0xc7, 0x27, 0xaf, 0xb9, 0x4a, 0x83, 0xee, 0x6d, 0x83, 0x60, 0xcb, 0xdf, 0xa2, 0xcc, 0x06, 0x40
 			};
-			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S, r, p, N)) {
 				Assert.IsTrue(scrypt.GetBytes(dkLen).SequenceEqual(expected));
 			}
 		}
@@ -80,7 +80,7 @@ namespace S22.Scrypt.Test {
 				0xd5, 0x43, 0x29, 0x55, 0x61, 0x3f, 0x0f, 0xcf, 0x62, 0xd4, 0x97, 0x05, 0x24, 0x2a, 0x9a, 0xf9,
 				0xe6, 0x1e, 0x85, 0xdc, 0x0d, 0x65, 0x1e, 0x40, 0xdf, 0xcf, 0x01, 0x7b, 0x45, 0x57, 0x58, 0x87
 			};
-			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S, r, p, N)) {
 				Assert.IsTrue(scrypt.GetBytes(dkLen).SequenceEqual(expected));
 			}
 		}
@@ -103,7 +103,7 @@ namespace S22.Scrypt.Test {
 				0x8e, 0x56, 0xfd, 0x8f, 0x4b, 0xa5, 0xd0, 0x9f, 0xfa, 0x1c, 0x6d, 0x92, 0x7c, 0x40, 0xf4, 0xc3,
 				0x37, 0x30, 0x40, 0x49, 0xe8, 0xa9, 0x52, 0xfb, 0xcb, 0xf4, 0x5c, 0x6f, 0xa7, 0x7a, 0x41, 0xa4
 			};
-			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S, r, p, N)) {
 				Assert.IsTrue(scrypt.GetBytes(dkLen).SequenceEqual(expected));
 			}
 		}
@@ -136,7 +136,7 @@ namespace S22.Scrypt.Test {
 				uint_expected[i] = BitConverter.ToUInt32(expected, i * 4);
 			var output = new uint[uint_in.Length];
 			fixed(uint *p = output)
-				Rfc7914DerivedBytes.Salsa(uint_in, p);
+				Rfc7914DeriveBytes.Salsa(uint_in, p);
 			Assert.IsTrue(output.SequenceEqual(uint_expected));
 		}
 
@@ -176,7 +176,7 @@ namespace S22.Scrypt.Test {
 				uint_expected[i] = BitConverter.ToUInt32(expected, i * 4);
 			fixed(uint *p = uint_input)
 			{
-				Rfc7914DerivedBytes.ScryptBlockMix(p, uint_input.Length);
+				Rfc7914DeriveBytes.ScryptBlockMix(p, uint_input.Length);
 			}
 			Assert.IsTrue(uint_input.SequenceEqual(uint_expected));
 		}
@@ -218,7 +218,7 @@ namespace S22.Scrypt.Test {
 			int N = 16,
 				r = 1,
 				p = 1;
-			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S, r, p, N)) {
 				fixed(uint *ptr = uint_input)
 				{
 					scrypt.ScryptROMix(ptr, uint_input.Length);
@@ -234,18 +234,18 @@ namespace S22.Scrypt.Test {
 		[TestMethod]
 		[TestCategory("Scrypt")]
 		public void InvalidArgumentsForCtor() {
-			AssertThrows<ArgumentNullException>(() => new Rfc7914DerivedBytes((byte[])null, null),
+			AssertThrows<ArgumentNullException>(() => new Rfc7914DeriveBytes((byte[])null, null),
 				"A password of null was inappropriately allowed.");
-			AssertThrows<ArgumentNullException>(() => new Rfc7914DerivedBytes("", null),
+			AssertThrows<ArgumentNullException>(() => new Rfc7914DeriveBytes("", null),
 				"A salt of null was inappropriately allowed.");
 			var S = Encoding.ASCII.GetBytes(string.Empty);
-			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, 0),
+			AssertThrows<ArgumentException>(() => new Rfc7914DeriveBytes("", S, 0),
 				"A block size less than or equal to 0 was inappropriately allowed.");
 			var r = 8;
-			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, r, -1),
+			AssertThrows<ArgumentException>(() => new Rfc7914DeriveBytes("", S, r, -1),
 				"A parallelization less than 0 was inappropriately allowed.");
 			var p = 0;
-			AssertThrows<ArgumentException>(() => new Rfc7914DerivedBytes("", S, r, p, 0),
+			AssertThrows<ArgumentException>(() => new Rfc7914DeriveBytes("", S, r, p, 0),
 				"A cost less than or equal to 0 was inappropriately allowed.");
 		}
 
@@ -258,14 +258,14 @@ namespace S22.Scrypt.Test {
 		public void InvalidArgumentForGetBytes() {
 			var P = Encoding.ASCII.GetBytes("pleaseletmein");
 			var S = Encoding.ASCII.GetBytes("SodiumChloride");
-			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S)) {
 				AssertThrows<ArgumentOutOfRangeException>(() => scrypt.GetBytes(-1),
 				"A negative number was inappropriately allowed as argument.");
 			}
 		}
 
 		/// <summary>
-		/// Ensures assigning null to the <see cref="Rfc7914DerivedBytes.Salt"/> property
+		/// Ensures assigning null to the <see cref="Rfc7914DeriveBytes.Salt"/> property
 		/// throws an <see cref="ArgumentNullException"/>.
 		/// </summary>
 		[TestMethod]
@@ -273,7 +273,7 @@ namespace S22.Scrypt.Test {
 		public void InvalidValueForSalt() {
 			var P = Encoding.ASCII.GetBytes(string.Empty);
 			var S = Encoding.ASCII.GetBytes(string.Empty);
-			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S)) {
 				AssertThrows<ArgumentNullException>(() => {
 					scrypt.Salt = null;
 				}, "A salt value of null was inappropriately allowed.");
@@ -281,7 +281,7 @@ namespace S22.Scrypt.Test {
 		}
 
 		/// <summary>
-		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DerivedBytes.BlockSize"/>
+		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DeriveBytes.BlockSize"/>
 		/// property throws an <see cref="ArgumentException"/>.
 		/// </summary>
 		[TestMethod]
@@ -289,7 +289,7 @@ namespace S22.Scrypt.Test {
 		public void InvalidValueForBlockSize() {
 			var P = Encoding.ASCII.GetBytes(string.Empty);
 			var S = Encoding.ASCII.GetBytes(string.Empty);
-			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S)) {
 				AssertThrows<ArgumentException>(() => {
 					scrypt.BlockSize = 0;
 				}, "A block size value of 0 was inappropriately allowed.");
@@ -300,7 +300,7 @@ namespace S22.Scrypt.Test {
 		}
 
 		/// <summary>
-		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DerivedBytes.Cost"/>
+		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DeriveBytes.Cost"/>
 		/// property throws an <see cref="ArgumentException"/>.
 		/// </summary>
 		[TestMethod]
@@ -308,7 +308,7 @@ namespace S22.Scrypt.Test {
 		public void InvalidValueForCost() {
 			var P = Encoding.ASCII.GetBytes(string.Empty);
 			var S = Encoding.ASCII.GetBytes(string.Empty);
-			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S)) {
 				AssertThrows<ArgumentException>(() => {
 					scrypt.Cost = 0;
 				}, "A cost value of 0 was inappropriately allowed.");
@@ -325,7 +325,7 @@ namespace S22.Scrypt.Test {
 		}
 
 		/// <summary>
-		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DerivedBytes.Parallelization"/>
+		/// Ensures that assigning an invalid value to the <see cref="Rfc7914DeriveBytes.Parallelization"/>
 		/// property throws an <see cref="ArgumentException"/>.
 		/// </summary>
 		[TestMethod]
@@ -333,7 +333,7 @@ namespace S22.Scrypt.Test {
 		public void InvalidValueForParallelization() {
 			var P = Encoding.ASCII.GetBytes(string.Empty);
 			var S = Encoding.ASCII.GetBytes(string.Empty);
-			using (var scrypt = new Rfc7914DerivedBytes(P, S)) {
+			using (var scrypt = new Rfc7914DeriveBytes(P, S)) {
 				AssertThrows<ArgumentException>(() => {
 					scrypt.Parallelization = -1;
 				}, "A negative parallelization value was inappropriately allowed.");

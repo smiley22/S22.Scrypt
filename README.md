@@ -9,7 +9,7 @@ This repository contains a .NET library that implements the password-based key d
 ### Usage & Examples
 
 To use the library add the S22.Scrypt.dll assembly to your project references in Visual Studio. Here's
-a simple example which instantiates a new instance of the Rfc7914DerivedBytes class and uses it to
+a simple example which instantiates a new instance of the Rfc7914DeriveBytes class and uses it to
 derive a sequence of bytes from a password.
 
 	using System;
@@ -17,11 +17,11 @@ derive a sequence of bytes from a password.
 
 	namespace Test {
 		class Program {
-		  static void Main(string[] args) {
-		    using (var scrypt = new Rfc7914DerivedBytes("myPassword", Encoding.ASCII.GetBytes("someSalt"))) {
-		      var derivedBytes = scrypt.GetBytes(1234);
-		    }
-		  }
+			static void Main(string[] args) {
+				using (var scrypt = new Rfc7914DeriveBytes("myPassword", Encoding.ASCII.GetBytes("someSalt"))) {
+					var derivedBytes = scrypt.GetBytes(1234);
+				}
+			}
 		}
 	}
 
@@ -36,6 +36,7 @@ This library is copyright © 2016 Torben Könke.
 ### License
 
 This library is released under the [MIT license](https://github.com/smiley22/S22.Sasl/blob/master/License.md).
+
 
 
 ### Bug reports

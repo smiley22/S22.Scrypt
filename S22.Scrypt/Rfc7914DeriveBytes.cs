@@ -6,7 +6,7 @@ namespace S22.Scrypt {
 	/// <summary>
 	/// Implements the password-based key derivation function scrypt.
 	/// </summary>
-	public class Rfc7914DerivedBytes : DeriveBytes {
+	public class Rfc7914DeriveBytes : DeriveBytes {
 		byte[] buffer;
 		int startIndex;
 		int endIndex;
@@ -137,7 +137,7 @@ namespace S22.Scrypt {
 		/// <paramref name="parallelization"/> is less than one, or the <paramref name="cost"/>
 		/// parameter is less than two or not a power of two.
 		/// </exception>
-		public Rfc7914DerivedBytes(byte[] password, byte[] salt, int blockSize = 8,
+		public Rfc7914DeriveBytes(byte[] password, byte[] salt, int blockSize = 8,
 			int parallelization = 1, int cost = 16384) {
 			if (password == null)
 				throw new ArgumentNullException(nameof(password));
@@ -176,7 +176,7 @@ namespace S22.Scrypt {
 		/// parameter is less than one, or the <paramref name="parallelization"/> is less than
 		/// one, or the <paramref name="cost"/> parameter is less than two or not a power of two.
 		/// </exception>
-		public Rfc7914DerivedBytes(byte[] password, int saltSize, int blockSize = 8,
+		public Rfc7914DeriveBytes(byte[] password, int saltSize, int blockSize = 8,
 			int parallelization = 1, int cost = 16384)
 			: this(password, GetRandomBytes(saltSize), blockSize, parallelization, cost) {
 		}
@@ -209,7 +209,7 @@ namespace S22.Scrypt {
 		/// parameter is less than one, or the <paramref name="parallelization"/> is less than
 		/// one, or the <paramref name="cost"/> parameter is less than two or not a power of two.
 		/// </exception>
-		public Rfc7914DerivedBytes(string password, int saltSize, int blockSize = 8,
+		public Rfc7914DeriveBytes(string password, int saltSize, int blockSize = 8,
 			int parallelization = 1, int cost = 16384)
 			: this(Encoding.UTF8.GetBytes(password), saltSize, blockSize, parallelization, cost) {
 		}
@@ -243,7 +243,7 @@ namespace S22.Scrypt {
 		/// <paramref name="parallelization"/> is less than one, or the <paramref name="cost"/>
 		/// parameter is less than two or not a power of two.
 		/// </exception>
-		public Rfc7914DerivedBytes(string password, byte[] salt, int blockSize = 8,
+		public Rfc7914DeriveBytes(string password, byte[] salt, int blockSize = 8,
 			int parallelization = 1, int cost = 16384)
 			: this(Encoding.UTF8.GetBytes(password), salt, blockSize, parallelization, cost) {
 		}
