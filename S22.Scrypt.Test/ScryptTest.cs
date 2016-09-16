@@ -154,7 +154,7 @@ namespace S22.Scrypt.Test {
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
-		public void ScryptBlockMixTestVector() {
+		public unsafe void ScryptBlockMixTestVector() {
 			var input = new byte[] {
 				0xf7, 0xce, 0x0b, 0x65, 0x3d, 0x2d, 0x72, 0xa4, 0x10, 0x8c, 0xf5, 0xab, 0xe9, 0x12, 0xff, 0xdd,
 				0x77, 0x76, 0x16, 0xdb, 0xbb, 0x27, 0xa7, 0x0e, 0x82, 0x04, 0xf3, 0xae, 0x2d, 0x0f, 0x6f, 0xad,
@@ -183,8 +183,11 @@ namespace S22.Scrypt.Test {
 			var uint_expected = new uint[expected.Length / 4];
 			for (var i = 0; i < uint_expected.Length; i++)
 				uint_expected[i] = BitConverter.ToUInt32(expected, i * 4);
-			var output = Rfc7914DerivedBytes.ScryptBlockMix(uint_input);
-			Assert.IsTrue(output.SequenceEqual(uint_expected));
+			fixed(uint *p = uint_input)
+			{
+				Rfc7914DerivedBytes.ScryptBlockMix(p, uint_input.Length);
+			}
+			Assert.IsTrue(uint_input.SequenceEqual(uint_expected));
 		}
 
 		/// <summary>
@@ -192,7 +195,7 @@ namespace S22.Scrypt.Test {
 		/// </summary>
 		[TestMethod]
 		[TestCategory("Scrypt")]
-		public void ScryptROMixTestVector() {
+		public unsafe void ScryptROMixTestVector() {
 			var input = new byte[] {
 				0xf7, 0xce, 0x0b, 0x65, 0x3d, 0x2d, 0x72, 0xa4, 0x10, 0x8c, 0xf5, 0xab, 0xe9, 0x12, 0xff, 0xdd,
 				0x77, 0x76, 0x16, 0xdb, 0xbb, 0x27, 0xa7, 0x0e, 0x82, 0x04, 0xf3, 0xae, 0x2d, 0x0f, 0x6f, 0xad,
@@ -225,7 +228,11 @@ namespace S22.Scrypt.Test {
 				r = 1,
 				p = 1;
 			using (var scrypt = new Rfc7914DerivedBytes(P, S, r, p, N)) {
-				Assert.IsTrue(scrypt.ScryptROMix(uint_input).SequenceEqual(uint_expected));
+				fixed(uint *ptr = uint_input)
+				{
+					scrypt.ScryptROMix(ptr, uint_input.Length);
+				}
+				Assert.IsTrue(uint_input.SequenceEqual(uint_expected));
 			}
 		}
 

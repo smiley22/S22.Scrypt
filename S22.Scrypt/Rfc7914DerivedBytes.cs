@@ -1,8 +1,4 @@
-﻿// Comment out if you want to compile a version that is somewhat slower but does not require
-// the /unsafe switch.
-#define UNSAFE
-
-using System;
+﻿using System;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -259,6 +255,9 @@ namespace S22.Scrypt {
 		/// 
 		/// </remarks>
 		public override byte[] GetBytes(int cb) {
+			if (cb <= 0)
+				throw new ArgumentOutOfRangeException(nameof(cb), "This parameter requires a " +
+					"non-negative number.");
 			throw new NotImplementedException();
 		}
 
@@ -273,7 +272,6 @@ namespace S22.Scrypt {
 			throw new NotImplementedException();
 		}
 
-#if UNSAFE
 		/// <summary>
 		/// Salsa20/8 Core is a round-reduced variant of the Salsa20 Core. It is a hash function
 		/// from 64-octet strings to 64-octet strings.
@@ -321,156 +319,62 @@ namespace S22.Scrypt {
 		/// <summary>
 		/// Performs the BlockMix algorithm.
 		/// </summary>
-		/// <param name="input">
-		/// The input data of size 128 * <see cref="BlockSize"/> bytes.
+		/// <param name="data">
+		/// A pointer to the input data of size 128 * <see cref="BlockSize"/> bytes.
 		/// </param>
-		/// <returns>
-		/// The transformed output data of size 128 * <see cref="BlockSize"/> bytes.
-		/// </returns>
-		internal static unsafe uint[] ScryptBlockMix(uint[] input) {
-			uint[] y = new uint[input.Length],
-				   t = new uint[16],
-				   z = new uint[16];
-			fixed (uint* p = input, py = y, pz = z)
+		/// <param name="size">
+		/// The number of elements in the array pointed to by <paramref name="data"/>.
+		/// </param>
+		internal static unsafe void ScryptBlockMix(uint* data, int size) {
+			uint[]
+				t = new uint[16],
+				z = new uint[16],
+				uneven = new uint[size / 2];
+			fixed (uint* pz = z, p = uneven)
 			{
-				var x = &p[input.Length - 16];
-				for (var i = 0; i < input.Length / 16; i++) {
+				uint* last = data, cur = p;
+				var x = &data[size - 16];
+				for (var i = 0; i < size / 16; i++) {
 					for (var c = 0; c < 16; c++)
-						t[c] = x[c] ^ p[i * 16 + c];
+						t[c] = x[c] ^ data[i * 16 + c];
 					x = Salsa(t, pz);
+					var div = i / 2;
+					var temp = cur;
+					cur = last;
+					last = temp;
 					for (var c = 0; c < 16; c++)
-						py[i * 16 + c] = x[c];
+						cur[div * 16 + c] = x[c];
 				}
 			}
-			return y;
+			for (var i = 0; i < uneven.Length; i++)
+				data[uneven.Length + i] = uneven[i];
 		}
 
 		/// <summary>
-		/// Performs the RomMix algorithm.
+		/// Performs the ROMix algorithm.
 		/// </summary>
-		/// <param name="input">
-		/// The input data of size 128 * <see cref="BlockSize"/> bytes.
+		/// <param name="data">
+		/// A pointer to the input data of size 128 * <see cref="BlockSize"/> bytes.
 		/// </param>
-		/// <returns>
-		/// The transformed output data of size 128 * <see cref="BlockSize"/> bytes.
-		/// </returns>
-		internal unsafe uint[] ScryptROMix(uint[] input) {
-			var len = input.Length;
-			var v = new uint[len * Cost];
+		/// <param name="size">
+		/// The number of elements in the array pointed to by <paramref name="data"/>.
+		/// </param>
+		internal unsafe void ScryptROMix(uint* data, int size) {
+			var v = new uint[size * Cost];
 			fixed (uint* pv = v)
 			{
 				for (var i = 0; i < Cost; i++) {
-					for (var c = 0; c < len; c++)
-						pv[i * len + c] = input[c];
-					input = ScryptBlockMix(input);
-
+					for (var c = 0; c < size; c++)
+						pv[i * size + c] = data[c];
+					ScryptBlockMix(data, size);
 				}
 				for (var i = 0; i < Cost; i++) {
-					var j = input[input.Length - 16] % Cost;
-					var t = Xor(input, &pv[j * len]);
-					input = ScryptBlockMix(t);
+					var j = data[size - 16] % Cost;
+					for(var k = 0; k < size; k++)
+						data[k] ^= pv[j * size + k];
+					ScryptBlockMix(data, size);
 				}
 			}
-			return input;
-		}
-#else
-		/// <summary>
-		/// Salsa20/8 Core is a round-reduced variant of the Salsa20 Core. It is a hash function
-		/// from 64-octet strings to 64-octet strings.
-		/// </summary>
-		/// <param name="input">
-		/// A 64-byte sized array of input data.
-		/// </param>
-		/// <returns>
-		/// A 64-byte sized array of the transformed output data.
-		/// </returns>
-		/// <remarks>
-		///  Note that Salsa20/8 Core is not a cryptographic hash function since it is not
-		///  collision resistant.
-		/// </remarks>
-		internal static uint[] Salsa(uint[] input) {
-			int i;
-			var x = new uint[16];
-			var output = new uint[16];
-			for (i = 0; i < 16; ++i)
-				x[i] = input[i];
-			for (i = 8; i > 0; i -= 2) {
-				x[4] ^= R(x[0] + x[12], 7); x[8] ^= R(x[4] + x[0], 9);
-				x[12] ^= R(x[8] + x[4], 13); x[0] ^= R(x[12] + x[8], 18);
-				x[9] ^= R(x[5] + x[1], 7); x[13] ^= R(x[9] + x[5], 9);
-				x[1] ^= R(x[13] + x[9], 13); x[5] ^= R(x[1] + x[13], 18);
-				x[14] ^= R(x[10] + x[6], 7); x[2] ^= R(x[14] + x[10], 9);
-				x[6] ^= R(x[2] + x[14], 13); x[10] ^= R(x[6] + x[2], 18);
-				x[3] ^= R(x[15] + x[11], 7); x[7] ^= R(x[3] + x[15], 9);
-				x[11] ^= R(x[7] + x[3], 13); x[15] ^= R(x[11] + x[7], 18);
-				x[1] ^= R(x[0] + x[3], 7); x[2] ^= R(x[1] + x[0], 9);
-				x[3] ^= R(x[2] + x[1], 13); x[0] ^= R(x[3] + x[2], 18);
-				x[6] ^= R(x[5] + x[4], 7); x[7] ^= R(x[6] + x[5], 9);
-				x[4] ^= R(x[7] + x[6], 13); x[5] ^= R(x[4] + x[7], 18);
-				x[11] ^= R(x[10] + x[9], 7); x[8] ^= R(x[11] + x[10], 9);
-				x[9] ^= R(x[8] + x[11], 13); x[10] ^= R(x[9] + x[8], 18);
-				x[12] ^= R(x[15] + x[14], 7); x[13] ^= R(x[12] + x[15], 9);
-				x[14] ^= R(x[13] + x[12], 13); x[15] ^= R(x[14] + x[13], 18);
-			}
-			for (i = 0; i < 16; ++i)
-				output[i] = x[i] + input[i];
-			return output;
-		}
-
-		/// <summary>
-		/// Performs the BlockMix algorithm.
-		/// </summary>
-		/// <param name="input">
-		/// The input data of size 128 * <see cref="BlockSize"/> bytes.
-		/// </param>
-		/// <returns>
-		/// The transformed output data of size 128 * <see cref="BlockSize"/> bytes.
-		/// </returns>
-		internal static byte[] ScryptBlockMix(byte[] input) {
-			var numBlocks = input.Length / 64;
-			var blocks = new uint[numBlocks][];
-			for (var i = 0; i < blocks.Length; i++) {
-				blocks[i] = new uint[16];
-				for (var c = 0; c < 16; c++)
-					blocks[i][c] = BitConverter.ToUInt32(input, i * 64 + c * 4);
-			}
-			var x = blocks[numBlocks - 1];
-			var y = new uint[numBlocks][];
-			for (var i = 0; i < blocks.Length; i++) {
-				var t = Xor(x, blocks[i]);
-				x = Salsa(t);
-				y[i] = x;
-			}
-			var @out = new byte[numBlocks * 64];
-			for (var i = 0; i < y.Length; i++) {
-				for (var c = 0; c < 16; c++) {
-					@out[i * 64 + c * 4] = (byte)(y[i][c] >> 0);
-					@out[i * 64 + c * 4 + 1] = (byte)(y[i][c] >> 8);
-					@out[i * 64 + c * 4 + 2] = (byte)(y[i][c] >> 16);
-					@out[i * 64 + c * 4 + 3] = (byte)(y[i][c] >> 24);
-				}
-			}
-			return @out;
-		}
-#endif
-
-		/// <summary>
-		/// XORs the specified input arrays with each other and returns the result.
-		/// </summary>
-		/// <param name="a">
-		/// The first array.
-		/// </param>
-		/// <param name="b">
-		/// The second array.
-		/// </param>
-		/// <returns>
-		/// A new array made up of the elements of a XORed with the elements of b.
-		/// </returns>
-		static unsafe uint[] Xor(uint[] a, uint* b) {
-			var c = new uint[a.Length];
-			for (var i = 0; i < a.Length; i++)
-				c[i] = a[i] ^ b[i];
-			return c;
 		}
 
 		/// <summary>
