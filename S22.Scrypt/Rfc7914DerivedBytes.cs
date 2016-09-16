@@ -411,7 +411,17 @@ namespace S22.Scrypt {
 				}
 			}
 		}
-		 internal unsafe byte[] Scrypt(int dkLen) {
+
+		/// <summary>
+		/// Returns a derived key of the specified length.
+		/// </summary>
+		/// <param name="dkLen">
+		/// The intended output length in octets of the derived key.
+		 /// </param>
+		 /// <returns>
+		 /// A derived key of the specified length.
+		 /// </returns>
+		internal unsafe byte[] Scrypt(int dkLen) {
 			using (var hmac = new HMACSHA256(password)) {
 				using (var rfc = new _Rfc2898DeriveBytes(password, salt, 1, hmac)) {
 					var b = rfc.GetBytes(Parallelization * 128 * BlockSize);
