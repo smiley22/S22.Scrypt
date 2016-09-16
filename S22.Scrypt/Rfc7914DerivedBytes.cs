@@ -7,6 +7,10 @@ namespace S22.Scrypt {
 	/// Implements the password-based key derivation function scrypt.
 	/// </summary>
 	public class Rfc7914DerivedBytes : DeriveBytes {
+		byte[] buffer;
+		int startIndex;
+		int endIndex;
+		readonly byte[] password;
 		byte[] salt;
 		int blockSize;
 		int cost;
@@ -34,6 +38,7 @@ namespace S22.Scrypt {
 				if (value == null)
 					throw new ArgumentNullException("The Salt property cannot be null.");
 				salt = (byte[])value.Clone();
+				Reset();
 			}
 		}
 
@@ -54,6 +59,7 @@ namespace S22.Scrypt {
 				if (value < 1)
 					throw new ArgumentException($"Invalid value {value} for BlockSize.");
 				blockSize = value;
+				Reset();
 			}
 		}
 
@@ -76,6 +82,7 @@ namespace S22.Scrypt {
 				if ((value < 2) || ((value & (value - 1)) != 0))
 					throw new ArgumentException($"Invalid value {value} for Cost.");
 				cost = value;
+				Reset();
 			}
 		}
 
@@ -97,6 +104,7 @@ namespace S22.Scrypt {
 				if (value < 0)
 					throw new ArgumentException($"Invalid value {value} for Parallelization.");
 				parallelization = value;
+				Reset();
 			}
 		}
 
@@ -133,6 +141,7 @@ namespace S22.Scrypt {
 			int parallelization = 1, int cost = 16384) {
 			if (password == null)
 				throw new ArgumentNullException(nameof(password));
+			this.password = password;
 			Salt = salt;
 			BlockSize = blockSize;
 			Parallelization = parallelization;
@@ -251,14 +260,39 @@ namespace S22.Scrypt {
 		/// <exception cref="ArgumentOutOfRangeException">
 		/// The cb parameter is out of range. This parameter requires a non-negative number.
 		/// </exception>
-		/// <remarks>
-		/// 
-		/// </remarks>
 		public override byte[] GetBytes(int cb) {
 			if (cb <= 0)
 				throw new ArgumentOutOfRangeException(nameof(cb), "This parameter requires a " +
 					"non-negative number.");
-			throw new NotImplementedException();
+			var data = new byte[cb];
+			var offset = 0;
+			var size = endIndex - startIndex;
+			if (size > 0) {
+				if (cb >= size) {
+					Buffer.BlockCopy(buffer, startIndex, data, 0, size);
+					startIndex = endIndex = 0;
+					offset += size;
+				} else {
+					Buffer.BlockCopy(buffer, startIndex, data, 0, cb);
+					startIndex += cb;
+					return data;
+				}
+			}
+			while (offset < cb) {
+				var T_block = Scrypt(buffer.Length);
+				var remainder = cb - offset;
+				if (remainder > buffer.Length) {
+					Buffer.BlockCopy(T_block, 0, data, offset, buffer.Length);
+					offset += buffer.Length;
+				} else {
+					Buffer.BlockCopy(T_block, 0, data, offset, remainder);
+					offset += remainder;
+					Buffer.BlockCopy(T_block, remainder, buffer, startIndex, buffer.Length - remainder);
+					endIndex += (buffer.Length - remainder);
+					return data;
+				}
+			}
+			return data;
 		}
 
 		/// <summary>
@@ -269,7 +303,8 @@ namespace S22.Scrypt {
 		/// <see cref="Cost"/> or <see cref="Parallelization"/> parameter is modified.
 		/// </remarks>
 		public override void Reset() {
-			throw new NotImplementedException();
+			buffer = new byte[128 * BlockSize];
+			startIndex = endIndex = 0;
 		}
 
 		/// <summary>
@@ -373,6 +408,23 @@ namespace S22.Scrypt {
 					for(var k = 0; k < size; k++)
 						data[k] ^= pv[j * size + k];
 					ScryptBlockMix(data, size);
+				}
+			}
+		}
+		 internal unsafe byte[] Scrypt(int dkLen) {
+			using (var hmac = new HMACSHA256(password)) {
+				using (var rfc = new _Rfc2898DeriveBytes(password, salt, 1, hmac)) {
+					var b = rfc.GetBytes(Parallelization * 128 * BlockSize);
+					fixed (byte* bp = b)
+					{
+						var p = (uint*)bp;
+						for (var i = 0; i < Parallelization; i++) {
+							ScryptROMix(&p[32 * BlockSize * i], 32 * BlockSize);
+						}
+					}
+					using (var rfc2 = new _Rfc2898DeriveBytes(password, b, 1, hmac)) {
+						return rfc2.GetBytes(dkLen);
+					}
 				}
 			}
 		}

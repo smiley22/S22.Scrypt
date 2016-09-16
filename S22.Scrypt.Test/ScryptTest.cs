@@ -6,7 +6,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
 using System.Linq;
 using System;
-using System.Collections.Generic;
 
 namespace S22.Scrypt.Test {
 	/// <summary>
@@ -132,7 +131,6 @@ namespace S22.Scrypt.Test {
 				uint_in[i] = BitConverter.ToUInt32(input, i * 4);
 			var P = Encoding.ASCII.GetBytes(string.Empty);
 			var S = Encoding.ASCII.GetBytes(string.Empty);
-#if UNSAFE
 			var uint_expected = new uint[expected.Length / 4];
 			for (var i = 0; i < uint_expected.Length; i++)
 				uint_expected[i] = BitConverter.ToUInt32(expected, i * 4);
@@ -140,13 +138,6 @@ namespace S22.Scrypt.Test {
 			fixed(uint *p = output)
 				Rfc7914DerivedBytes.Salsa(uint_in, p);
 			Assert.IsTrue(output.SequenceEqual(uint_expected));
-#else
-			var uint_out = Rfc7914DerivedBytes.Salsa(uint_in);
-			var byte_out = new List<byte>();
-			for (var i = 0; i < uint_out.Length; i++)
-				byte_out.AddRange(BitConverter.GetBytes(uint_out[i]));
-			Assert.IsTrue(byte_out.SequenceEqual(expected));
-#endif
 		}
 
 		/// <summary>
