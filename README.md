@@ -8,9 +8,7 @@ This repository contains a .NET library that implements the password-based key d
 
 ### Usage & Examples
 
-To use the library add the S22.Scrypt.dll assembly to your project references in Visual Studio. Here's
-a simple example which instantiates a new instance of the Rfc7914DeriveBytes class and uses it to
-derive a sequence of bytes from a password.
+To use the library add the S22.Scrypt.dll assembly to your project references in Visual Studio. The Rfc7914DeriveBytes class inherits from [DeriveBytes](https://msdn.microsoft.com/en-us/library/system.security.cryptography.derivebytes(v=vs.110).aspx), so it can be used just like .NET's [Rfc2898DeriveBytes](https://msdn.microsoft.com/en-us/library/system.security.cryptography.rfc2898derivebytes(v=vs.110).aspx) class. Here's a simple example which instantiates a new instance of the Rfc7914DeriveBytes class and uses it to derive a sequence of bytes from a password.
 
 	using System;
 	using S22.Scrypt;
