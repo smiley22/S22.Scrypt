@@ -15,6 +15,8 @@ namespace S22.Scrypt {
 		int blockSize;
 		int cost;
 		int parallelization;
+		DeriveBytes derive;
+		readonly HMAC hmac;
 
 		/// <summary>
 		/// Gets or sets the key salt value for the operation.
@@ -142,6 +144,7 @@ namespace S22.Scrypt {
 			if (password == null)
 				throw new ArgumentNullException(nameof(password));
 			this.password = password;
+			hmac = new HMACSHA256(password);
 			Salt = salt;
 			BlockSize = blockSize;
 			Parallelization = parallelization;
@@ -260,6 +263,11 @@ namespace S22.Scrypt {
 		/// <exception cref="ArgumentOutOfRangeException">
 		/// The cb parameter is out of range. This parameter requires a non-negative number.
 		/// </exception>
+		/// <remarks>
+		/// Repeated calls to this method will not generate the same key; instead, appending two
+		/// calls of the GetBytes method with a cb parameter value of 20 is the equivalent of
+		/// calling the GetBytes method once with a cb parameter value of 40.
+		/// </remarks>
 		public override byte[] GetBytes(int cb) {
 			if (cb <= 0)
 				throw new ArgumentOutOfRangeException(nameof(cb), "This parameter requires a " +
@@ -303,8 +311,28 @@ namespace S22.Scrypt {
 		/// <see cref="Cost"/> or <see cref="Parallelization"/> parameter is modified.
 		/// </remarks>
 		public override void Reset() {
-			buffer = new byte[128 * BlockSize];
+			buffer = new byte[8 * BlockSize];
 			startIndex = endIndex = 0;
+			if (derive != null)
+				derive.Dispose();
+			derive = null;
+		}
+
+		/// <summary>
+		/// Releases all resources used by the current instance, optionally disposing of managed
+		/// resource.
+		/// </summary>
+		/// <param name="disposing">
+		/// true to dispose of managed resources, otherwise false.
+		/// </param>
+		protected override void Dispose(bool disposing) {
+			base.Dispose(disposing);
+			if(disposing) {
+				if (derive != null)
+					derive.Dispose(); ;
+				if (hmac != null)
+					hmac.Dispose();
+			}
 		}
 
 		/// <summary>
@@ -422,20 +450,19 @@ namespace S22.Scrypt {
 		 /// A derived key of the specified length.
 		 /// </returns>
 		internal unsafe byte[] Scrypt(int dkLen) {
-			using (var hmac = new HMACSHA256(password)) {
-				using (var rfc = new _Rfc2898DeriveBytes(password, salt, 1, hmac)) {
-					var b = rfc.GetBytes(Parallelization * 128 * BlockSize);
-					fixed (byte* bp = b)
-					{
-						var p = (uint*)bp;
-						for (var i = 0; i < Parallelization; i++) {
-							ScryptROMix(&p[32 * BlockSize * i], 32 * BlockSize);
-						}
-					}
-					using (var rfc2 = new _Rfc2898DeriveBytes(password, b, 1, hmac)) {
-						return rfc2.GetBytes(dkLen);
+			if (derive != null)
+				return derive.GetBytes(dkLen);
+			using (var rfc = new _Rfc2898DeriveBytes(password, salt, 1, hmac)) {
+				var b = rfc.GetBytes(Parallelization * 128 * BlockSize);
+				fixed (byte* bp = b)
+				{
+					var p = (uint*)bp;
+					for (var i = 0; i < Parallelization; i++) {
+						ScryptROMix(&p[32 * BlockSize * i], 32 * BlockSize);
 					}
 				}
+				derive = new _Rfc2898DeriveBytes(password, b, 1, hmac);
+				return Scrypt(dkLen);
 			}
 		}
 
