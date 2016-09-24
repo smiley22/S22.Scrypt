@@ -4,6 +4,8 @@
 
 This repository contains a .NET library that implements the password-based key derivation function scrypt specified in [RFC 7914](https://tools.ietf.org/html/rfc7914). 
 
+The accompanying unit-test suite passes all [test vectors](https://tools.ietf.org/html/rfc7914#section-12) contained in the RFC 7914 document.
+
 
 
 ### Usage & Examples
